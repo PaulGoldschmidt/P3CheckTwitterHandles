@@ -1,28 +1,23 @@
+import os
+import json
 import tweepy
 
-consumer_key = "your_consumer_key"
-consumer_secret = "your_consumer_secret"
-access_token = "your_access_token"
-access_token_secret = "your_access_token_secret"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(script_dir)
+keys_path = os.path.join(parent_dir, "api-keys.json")
 
-def is_handle_claimed(handle):
-    auth = tweepy.OAuth1UserHandler(
-        consumer_key, consumer_secret,
-        access_token, access_token_secret
-    )
-    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+with open(keys_path) as f:
+    keys = json.load(f)
 
-    try:
-        user = api.get_user(handle)
-        return True
-    except tweepy.TweepError as e:
-        if "User not found" in str(e):
-            return False
-        else:
-            raise e
+bearer_token = keys["bearer_token"]
+
+auth = tweepy.AppAuthHandler(keys["consumer_key"], keys["consumer_secret"])
+api = tweepy.API(auth, wait_on_rate_limit=True)
 
 handle = "example_handle"
-if is_handle_claimed(handle):
-    print(f"The handle @{handle} is claimed.")
-else:
-    print(f"The handle @{handle} is not claimed.")
+try:
+    user = api.get_user(handle)
+    print(f"The handle @{handle} is claimed by user ID {user.id} and name {user.name}.")
+except tweepy.TweepError as e:
+    if "User not found" in str(e):
+        print(f"The handle @{handle} is not claimed.")
